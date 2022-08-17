@@ -4,15 +4,20 @@ const getDayData = async day => {
   // make a POST request to the server with the day data and
   // that should return the updated list for that day
 
-  // const response = await fetch('http://73.238.37.29:8563', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify(day),
-  // });
-  // const data = await response.json();
-  // console.log('data', data)
+  try {
+    const response = await fetch('http://73.238.37.29:8563', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(day),
+    });
+    const data = await response.json();
+
+    console.log('data', data);
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 const calendar = new VanillaCalendar('#calendar', {
