@@ -151,7 +151,9 @@ const createChart = (data = []) => {
 };
 
 // this is in a function because we're using async/await
-const getFurnaceData = async () => {
+const getDataCreateChart = async () => {
+  let data = [];
+
   try {
     const result = await fetch('http://73.238.37.29:8563', {
       method: 'GET',
@@ -159,15 +161,14 @@ const getFurnaceData = async () => {
         'Content-Type': 'application/json',
       },
     });
-    const furnaceData = await result.json();
+    data = await result.json();
 
     console.log('furnaceData', furnaceData);
-
-    createChart(furnaceData);
   } catch (err) {
     console.error(err);
-    createChart();
   }
+
+  createChart(temp);
 };
 
-getFurnaceData();
+getDataCreateChart();
