@@ -5,7 +5,7 @@ const hours = [
 ];
 
 const chartData = {
-  labels: hours,
+  labels: [],
   datasets: [
     {
       label: 'Furnace On and Off times',
@@ -109,6 +109,9 @@ const config = {
         },
       },
       x: {
+        ticks: {
+          beginAtZero: true,
+        },
         title: {
           display: true,
           text: '',
@@ -128,47 +131,88 @@ const config = {
   },
 };
 
+const chart = new Chart(document.querySelector('#furnace-chart'), config);
+
 const createChart = (data = []) => {
   if (data.length) {
     // set the x and y to make the chart have a dynamic x axis
-    const actions = data.map(({ action = '', hour = '' }) => ({
-      x: hour,
-      y: action,
-    }));
+    const actions = data
+      .map(({ action = '', hour = '', minute = '', second = '' }, i) => {
+        return {
+          x: (parseInt(hour) + parseInt(minute) / 60 + parseInt(second) / 3600).toFixed(
+            1
+          ),
+          y: action,
+        };
+      })
+      .map(({ x, y }) => {
+        console.log('x', parseInt(x).toFixed(0));
 
-    // only set the y points with a predefined x axis
-    // const actions = furnaceData.map(({ action = '' }) => action);
+        return {
+          x,
+          y,
+        };
+      });
+
+    console.log('hours', hours);
 
     // set the chart data to the configured response data (actions)
     chartData.datasets[0].data = actions;
 
     // set the x axis title to the day, month and year
-    config.options.scales.x.title.text = `${data[0].day} /  ${data[0].month} / ${data[0].year}`;
+    // config.options.scales.x.title.text = `${data[0].day} /  ${data[0].month} / ${data[0].year}`;
   }
 
   // create the chart here so it waits for the request to finish with updated data
-  new Chart(document.querySelector('#furnace-chart'), config);
+  if (chart && chart.update) {
+    chart.update();
+  } else {
+    new Chart(document.querySelector('#furnace-chart'), config);
+  }
 };
 
-// this is in a function because we're using async/await
-const getDataCreateChart = async () => {
-  let data = [];
+const getDataCreateChart = async day => {
+  const formData = new FormData();
+
+  formData.append('day', day.day);
+  formData.append('month', day.month);
+  formData.append('year', day.year);
+
+  // make a POST request to the server with the day data and
+  // that should return the updated list for that day
 
   try {
-    const result = await fetch('http://73.238.37.29:8563', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await fetch('http://73.238.37.29:8563/qdb.php', {
+      method: 'POST',
+      body: formData,
     });
-    data = await result.json();
+    const data = await response.json();
 
-    console.log('furnaceData', furnaceData);
+    console.log('data', data);
+
+    createChart(data);
   } catch (err) {
     console.error(err);
   }
-
-  createChart(temp);
 };
 
-getDataCreateChart();
+const calendar = new VanillaCalendar('#calendar', {
+  // options
+  actions: {
+    clickDay: async (e, dates) => {
+      const dayValues = dates[0].split('-');
+
+      const dayObj = {
+        day: dayValues[2],
+        month: dayValues[1],
+        year: dayValues[0],
+      };
+
+      await getDataCreateChart(dayObj);
+    },
+  },
+});
+
+// getDataCreateChart();
+
+calendar.init();
